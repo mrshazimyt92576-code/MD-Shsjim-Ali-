@@ -1,0 +1,187 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated HDR Studios user profile and app preferences.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "Optional user email."
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "enum": ["en", "bn", "es", "hi", "ar", "ja"],
+          "description": "Active UI language code."
+        },
+        "themeMode": {
+          "type": "string",
+          "enum": ["obsidian", "midnight", "system"],
+          "description": "Selected appearance theme."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": ["userId", "displayName", "preferredLanguage", "themeMode", "createdAt", "updatedAt"]
+    },
+    "HdrProject": {
+      "title": "HdrProject",
+      "description": "Video editing and dynamic range grading project metadata.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase Auth UID."
+        },
+        "title": {
+          "type": "string",
+          "description": "Project display title."
+        },
+        "sourceUri": {
+          "type": "string",
+          "description": "Device media URI string."
+        },
+        "width": {
+          "type": "integer",
+          "description": "Source video width in pixels."
+        },
+        "height": {
+          "type": "integer",
+          "description": "Source video height in pixels."
+        },
+        "fps": {
+          "type": "integer",
+          "description": "Source video frame rate."
+        },
+        "durationMs": {
+          "type": "integer",
+          "description": "Source video duration in milliseconds."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["READY", "EDITING", "EXPORTED", "FAILED"],
+          "description": "Current project processing status."
+        },
+        "presetName": {
+          "type": "string",
+          "description": "Active HDR preset name."
+        },
+        "highlightRecovery": {
+          "type": "number",
+          "description": "Highlight recovery amount (0.0 to 1.0)."
+        },
+        "shadowLift": {
+          "type": "number",
+          "description": "Shadow lift amount (0.0 to 1.0)."
+        },
+        "dynamicContrast": {
+          "type": "number",
+          "description": "Dynamic contrast amount (0.0 to 1.0)."
+        },
+        "saturationVibrance": {
+          "type": "number",
+          "description": "Saturation and vibrance amount (0.0 to 1.0)."
+        },
+        "brightnessExposure": {
+          "type": "number",
+          "description": "Brightness and exposure balance (-1.0 to 1.0)."
+        },
+        "overallIntensity": {
+          "type": "number",
+          "description": "Overall HDR grade intensity (0.0 to 1.0)."
+        },
+        "highlightEnabled": {
+          "type": "boolean"
+        },
+        "shadowEnabled": {
+          "type": "boolean"
+        },
+        "contrastEnabled": {
+          "type": "boolean"
+        },
+        "saturationEnabled": {
+          "type": "boolean"
+        },
+        "brightnessEnabled": {
+          "type": "boolean"
+        },
+        "intensityEnabled": {
+          "type": "boolean"
+        },
+        "lastExportResolution": {
+          "type": "string",
+          "enum": ["SOURCE", "FHD_1080P", "UHD_4K"]
+        },
+        "lastExportFps": {
+          "type": "integer"
+        },
+        "lastExportUri": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp set via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "sourceUri",
+        "width",
+        "height",
+        "fps",
+        "durationMs",
+        "status",
+        "presetName",
+        "highlightRecovery",
+        "shadowLift",
+        "dynamicContrast",
+        "saturationVibrance",
+        "brightnessExposure",
+        "overallIntensity",
+        "highlightEnabled",
+        "shadowEnabled",
+        "contrastEnabled",
+        "saturationEnabled",
+        "brightnessEnabled",
+        "intensityEnabled",
+        "lastExportResolution",
+        "lastExportFps",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Owner-only user profile and studio preferences."
+    },
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/HdrProject" },
+      "description": "Owner-only HDR video editing projects and grading parameters."
+    }
+  }
+}

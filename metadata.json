@@ -1,0 +1,6 @@
+{
+  "name": "HDR Studios",
+  "description": "Liquid Glass HDR video editing and dynamic range enhancement studio for Android 15+.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

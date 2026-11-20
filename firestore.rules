@@ -1,0 +1,145 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.userId.size() <= 128 &&
+             data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 80 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 120)) &&
+             data.preferredLanguage in ['en', 'bn', 'es', 'hi', 'ar', 'ja'] &&
+             data.themeMode in ['obsidian', 'midnight', 'system'] &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidHdrProject(data, userId) {
+      return data.userId is string &&
+             data.userId == request.auth.uid &&
+             data.userId == userId &&
+             data.userId.size() <= 128 &&
+             data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 120 &&
+             data.sourceUri is string &&
+             data.sourceUri.size() >= 1 &&
+             data.sourceUri.size() <= 500 &&
+             data.width is int && data.width >= 1 && data.width <= 8192 &&
+             data.height is int && data.height >= 1 && data.height <= 8192 &&
+             data.fps is int && data.fps >= 1 && data.fps <= 240 &&
+             data.durationMs is int && data.durationMs >= 0 && data.durationMs <= 86400000 &&
+             data.status in ['READY', 'EDITING', 'EXPORTED', 'FAILED'] &&
+             data.presetName is string &&
+             data.presetName.size() <= 40 &&
+             data.highlightRecovery is number && data.highlightRecovery >= 0.0 && data.highlightRecovery <= 1.0 &&
+             data.shadowLift is number && data.shadowLift >= 0.0 && data.shadowLift <= 1.0 &&
+             data.dynamicContrast is number && data.dynamicContrast >= 0.0 && data.dynamicContrast <= 1.0 &&
+             data.saturationVibrance is number && data.saturationVibrance >= 0.0 && data.saturationVibrance <= 1.0 &&
+             data.brightnessExposure is number && data.brightnessExposure >= -1.0 && data.brightnessExposure <= 1.0 &&
+             data.overallIntensity is number && data.overallIntensity >= 0.0 && data.overallIntensity <= 1.0 &&
+             data.highlightEnabled is bool &&
+             data.shadowEnabled is bool &&
+             data.contrastEnabled is bool &&
+             data.saturationEnabled is bool &&
+             data.brightnessEnabled is bool &&
+             data.intensityEnabled is bool &&
+             data.lastExportResolution in ['SOURCE', 'FHD_1080P', 'UHD_4K'] &&
+             data.lastExportFps in [0, 30, 60, 120] &&
+             (!('lastExportUri' in data) || (data.lastExportUri is string && data.lastExportUri.size() <= 500)) &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       incoming().keys().hasAll(['userId', 'displayName', 'preferredLanguage', 'themeMode', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'displayName', 'email', 'preferredLanguage', 'themeMode', 'createdAt', 'updatedAt']) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'preferredLanguage', 'themeMode', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      match /projects/{projectId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(projectId);
+        allow list: if isOwner(userId) && isValidId(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'title', 'sourceUri', 'width', 'height', 'fps', 'durationMs',
+                           'status', 'presetName', 'highlightRecovery', 'shadowLift', 'dynamicContrast',
+                           'saturationVibrance', 'brightnessExposure', 'overallIntensity',
+                           'highlightEnabled', 'shadowEnabled', 'contrastEnabled',
+                           'saturationEnabled', 'brightnessEnabled', 'intensityEnabled',
+                           'lastExportResolution', 'lastExportFps', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'title', 'sourceUri', 'width', 'height', 'fps', 'durationMs',
+                           'status', 'presetName', 'highlightRecovery', 'shadowLift', 'dynamicContrast',
+                           'saturationVibrance', 'brightnessExposure', 'overallIntensity',
+                           'highlightEnabled', 'shadowEnabled', 'contrastEnabled',
+                           'saturationEnabled', 'brightnessEnabled', 'intensityEnabled',
+                           'lastExportResolution', 'lastExportFps', 'lastExportUri', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidHdrProject(incoming(), userId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         isValidHdrProject(incoming(), userId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'title', 'status', 'presetName', 'highlightRecovery', 'shadowLift',
+                           'dynamicContrast', 'saturationVibrance', 'brightnessExposure', 'overallIntensity',
+                           'highlightEnabled', 'shadowEnabled', 'contrastEnabled',
+                           'saturationEnabled', 'brightnessEnabled', 'intensityEnabled',
+                           'lastExportResolution', 'lastExportFps', 'lastExportUri', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(projectId);
+      }
+    }
+  }
+}
